@@ -1,0 +1,3 @@
+# 智能体服务依赖：除 openai 外全部使用 Python 标准库
+# （HTTP 服务用 http.server，HTTP 客户端用 urllib，数据库直连是没有的）
+openai>=1.40.0

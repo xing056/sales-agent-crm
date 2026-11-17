@@ -1,0 +1,23 @@
+# 统一换行符，避免 Windows 上克隆后 shell/bat 脚本执行失败
+* text=auto
+
+# 批处理必须 CRLF，否则 cmd 解析会出问题
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 其余脚本统一 LF
+*.sh text eol=lf
+*.py text eol=lf
+*.js text eol=lf
+*.vue text eol=lf
+*.sql text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+
+# 图片按二进制处理，别让 git 试着做行尾转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary

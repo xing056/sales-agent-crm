@@ -1,0 +1,81 @@
+# ============================================================
+#  sales-agent-crm
+#  原则：代码和种子数据进仓库，凭据、依赖、构建产物、用户上传不进。
+# ============================================================
+
+# ---------- 凭据（绝不要提交） ----------
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+*.log
+.pytest_cache/
+.mypy_cache/
+
+# ---------- Node ----------
+node_modules/
+dist/
+dist-*/
+dist_*/
+.vite/
+*.tsbuildinfo
+
+# ---------- 数据库导出 ----------
+*.sql.gz
+dump-*.sql
+
+# ---------- 媒体文件 ----------
+# 用户上传的内容不进仓库（体积大、通常含真实数据）。
+# 但 seed.sql 引用到的展示素材**必须**进 —— 否则别人 clone 下来满屏碎图，
+# 而且那种"图片挂了"的第一印象会盖掉整个项目。
+#
+# 规则写法注意：不能先忽略整个目录再想用 ! 放行里面的文件 ——
+# git 不会重新包含被忽略目录下的任何东西。所以这里用 `dir/*` 逐层展开。
+backend/media/uploads/*
+!backend/media/uploads/avatar/
+backend/media/uploads/avatar/*
+!backend/media/uploads/avatar/01_2DwZC44.png
+!backend/media/uploads/avatar/01_4Kcsd9f.png
+!backend/media/uploads/avatar/02_7nCNVJe.webp
+!backend/media/uploads/avatar/03.webp
+!backend/media/uploads/avatar/03_WmtMltH.webp
+!backend/media/uploads/avatar/04.webp
+!backend/media/uploads/avatar/06_EtdHAaB.webp
+!backend/media/uploads/avatar/08.webp
+!backend/media/uploads/avatar/08_r7r5I2p.webp
+!backend/media/uploads/avatar/15.jpg
+!backend/media/uploads/avatar/16.jpg
+!backend/media/uploads/avatar/21.webp
+!backend/media/uploads/avatar/23.jpg
+!backend/media/uploads/avatar/27_SBd3p8Q.webp
+!backend/media/uploads/avatar/31.webp
+!backend/media/uploads/avatar/31_lhHSFt9.webp
+!backend/media/uploads/avatar/33.jpg
+!backend/media/uploads/avatar/35.jpg
+
+backend/media/editor/*
+!backend/media/editor/1767229904.930764.jpg
+!backend/media/editor/1767230507.186354.jpg
+
+# 商品图：目录里全部被 seed 引用，整个放行
+!backend/media/product/
+
+# 没有在任何地方被引用的残留素材，不进仓库
+backend/media/baidu.png
+backend/media/category/
+
+# ---------- 编辑器 / 系统 ----------
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,86 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+
+a {
+    text-decoration: none;
+}
+
+input {
+    outline: 0;
+}
+
+li {
+    list-style-type: none;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* ============================================================
+   主题变量
+   ------------------------------------------------------------
+   Element Plus 的 --el-* 只覆盖它自己的组件。布局容器、我自己写的
+   抽屉/列表里那些写死的颜色，统一收敛到这里的 --app-*：
+   一套样式写一遍，明暗两套值切换，不用再写 html.dark .xxx 覆盖。
+
+   新增样式时优先用 var(--el-text-color-primary) 这类官方变量，
+   官方没有对应语义的才用下面的 --app-*。**不要再写死 #fff / #333。**
+   ============================================================ */
+:root {
+    --app-bg-page: #f5f7fa;      /* 页面底色 */
+    --app-bg-card: #ffffff;      /* 卡片/面板底色 */
+    --app-bg-muted: #fafafa;     /* 代码块、次要区块 */
+    --app-bg-sider: #ffffff;     /* 侧边栏 / 顶栏 */
+    --app-border: #ebeef5;       /* 常规分割线 */
+    --app-text: #1f2329;         /* 主文字 */
+    --app-text-sub: #909399;     /* 次要文字 */
+
+    /* 状态色：警告 / 成功 / 错误，各自成组，暗色下要整组换掉 */
+    --app-warn-bg: #fdf6ec;
+    --app-warn-text: #b88230;
+    --app-warn-border: #faecd8;
+    --app-ok-bg: #f0f9eb;
+    --app-ok-text: #529b2e;
+    --app-err-bg: #fef0f0;
+    --app-err-text: #c45656;
+    --app-err-border: #fbc4c4;
+
+    /* 表格里"需要关注"的行底色 */
+    --app-danger-row: #fef8f8;
+}
+
+html.dark {
+    --app-bg-page: #141414;
+    --app-bg-card: #1d1e1f;
+    --app-bg-muted: #141414;
+    --app-bg-sider: #1d1e1f;
+    --app-border: #2c2c2c;
+    --app-text: #e5eaf3;
+    --app-text-sub: #a3a6ad;
+
+    /* 暗色下的状态色：底色压暗、文字提亮，保证对比度但不刺眼 */
+    --app-warn-bg: #2b2111;
+    --app-warn-text: #e6a23c;
+    --app-warn-border: #4a3a1c;
+    --app-ok-bg: #1c2518;
+    --app-ok-text: #85ce61;
+    --app-err-bg: #2b1d1d;
+    --app-err-text: #f89898;
+    --app-err-border: #5c2b2b;
+
+    --app-danger-row: #2b1d1d;
+}
+
+/* 切主题时给个短过渡，避免整页"啪"一下跳变。
+   只对背景/文字/边框生效，不动 transform，避免拖慢表格滚动。 */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+    transition: background-color 0.22s ease, color 0.22s ease,
+                border-color 0.22s ease, fill 0.22s ease !important;
+}

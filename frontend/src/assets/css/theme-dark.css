@@ -1,0 +1,53 @@
+/* 暗色主题的补充样式
+   ------------------------------------------------------------
+   Element Plus 的 dark/css-vars.css 接管了所有 el-* 组件，
+   common.css 里的 --app-* 变量接管了布局和我自己写的组件。
+
+   所以这个文件只留两类东西：
+     1) 布局里"需要在两种主题下都保持深色"的部分（侧边栏、顶栏）
+     2) 少量 Element 变量表达不了的细节
+
+   新增样式请优先用 var(--el-*) 或 var(--app-*)，
+   不要往这里继续堆 html.dark .xxx 的逐条覆盖 —— 那是补不干净的。 */
+
+html.dark body {
+    background-color: var(--app-bg-page);
+    color: var(--app-text);
+}
+
+/* ---------- 布局 ---------- */
+/* 侧边栏两种主题下都是深的，所以这里要单独压一档 */
+html.dark .el-aside {
+    background-color: #1d1e1f;
+    border-right: 1px solid var(--app-border);
+}
+
+html.dark .logo-text {
+    color: var(--app-text);
+}
+
+html.dark .el-header {
+    border-bottom: 1px solid var(--app-border);
+}
+
+html.dark .el-main {
+    background-color: var(--app-bg-page);
+}
+
+html.dark .el-card {
+    border-color: var(--app-border);
+}
+
+html.dark .el-divider {
+    border-color: var(--app-border);
+}
+
+/* 表格：Element 暗色下斑马纹偏亮，压一档更像"后台"而不是"报表" */
+html.dark .el-table tr:hover > td.el-table__cell {
+    background-color: #232324;
+}
+
+/* 空状态插图在暗色下太跳，降透明度 */
+html.dark .el-empty__image {
+    opacity: 0.55;
+}

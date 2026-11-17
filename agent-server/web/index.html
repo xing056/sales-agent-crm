@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CRM 智能体</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; height: 100vh; display: flex; flex-direction: column;
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: #f0f2f5; color: #1f2329;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 12px 20px; background: #fff; border-bottom: 1px solid #e4e7ed;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  }
+  header .title { font-size: 16px; font-weight: 600; }
+  header .sub { font-size: 12px; color: #909399; }
+  header .spacer { flex: 1; }
+  select, button { font-family: inherit; font-size: 13px; }
+  select {
+    padding: 6px 10px; border: 1px solid #dcdfe6; border-radius: 6px; background: #fff;
+  }
+  .ghost {
+    padding: 6px 12px; border: 1px solid #dcdfe6; background: #fff;
+    border-radius: 6px; cursor: pointer; color: #606266;
+  }
+  .ghost:hover { border-color: #409eff; color: #409eff; }
+
+  #chat { flex: 1; overflow-y: auto; padding: 20px; }
+  .wrap { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+  .msg { display: flex; gap: 10px; }
+  .msg.user { justify-content: flex-end; }
+  .bubble {
+    padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.7;
+    max-width: 78%; white-space: pre-wrap; word-break: break-word;
+  }
+  .user .bubble { background: #409eff; color: #fff; border-bottom-right-radius: 3px; }
+  .bot .bubble { background: #fff; border: 1px solid #e4e7ed; border-bottom-left-radius: 3px; }
+
+  .tool {
+    background: #fff; border: 1px solid #e4e7ed; border-left: 3px solid #67c23a;
+    border-radius: 8px; padding: 10px 12px; font-size: 13px;
+  }
+  .tool.pending { border-left-color: #e6a23c; }
+  .tool .head { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .tool .name { font-weight: 600; color: #303133; font-family: ui-monospace, Consolas, monospace; }
+  .tool .tag {
+    font-size: 11px; padding: 1px 6px; border-radius: 4px;
+    background: #f0f9eb; color: #67c23a; border: 1px solid #e1f3d8;
+  }
+  .tool.pending .tag { background: #fdf6ec; color: #e6a23c; border-color: #faecd8; }
+  .tool .arrow { margin-left: auto; color: #909399; font-size: 12px; }
+  .tool pre {
+    margin: 8px 0 0; padding: 8px; background: #fafafa; border-radius: 6px;
+    font-size: 12px; line-height: 1.6; max-height: 260px; overflow: auto;
+    white-space: pre-wrap; word-break: break-all; color: #475669;
+    font-family: ui-monospace, Consolas, monospace;
+  }
+  .tool pre.hidden { display: none; }
+
+  .confirm {
+    background: #fff; border: 1px solid #faecd8; border-left: 3px solid #e6a23c;
+    border-radius: 8px; padding: 12px 14px; font-size: 13px;
+  }
+  .confirm .q { margin-bottom: 10px; color: #303133; }
+  .confirm .acts { display: flex; gap: 8px; }
+  .btn-yes { background: #e6a23c; color: #fff; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; }
+  .btn-no { background: #fff; color: #606266; border: 1px solid #dcdfe6; padding: 6px 16px; border-radius: 6px; cursor: pointer; }
+
+  .hint { text-align: center; color: #909399; font-size: 13px; padding: 30px 0; line-height: 2; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+  .chip {
+    background: #fff; border: 1px solid #e4e7ed; border-radius: 16px;
+    padding: 6px 14px; font-size: 13px; color: #606266; cursor: pointer;
+  }
+  .chip:hover { border-color: #409eff; color: #409eff; }
+
+  footer { padding: 12px 20px 18px; background: #f0f2f5; }
+  .inputbar {
+    max-width: 880px; margin: 0 auto; display: flex; gap: 10px; align-items: flex-end;
+    background: #fff; border: 1px solid #dcdfe6; border-radius: 10px; padding: 8px 10px;
+  }
+  .inputbar:focus-within { border-color: #409eff; }
+  textarea {
+    flex: 1; border: none; outline: none; resize: none; font-family: inherit;
+    font-size: 14px; line-height: 1.6; max-height: 120px; padding: 6px;
+  }
+  .send {
+    background: #409eff; color: #fff; border: none; border-radius: 6px;
+    padding: 8px 18px; cursor: pointer; font-size: 14px;
+  }
+  .send:disabled { background: #a0cfff; cursor: not-allowed; }
+  .dot { display: inline-block; animation: blink 1.2s infinite; }
+  @keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="title">CRM 智能体</div>
+    <div class="sub" id="sub">连接中…</div>
+  </div>
+  <div class="spacer"></div>
+  <label class="sub">身份</label>
+  <select id="user"></select>
+  <button class="ghost" id="reset">清空对话</button>
+</header>
+
+<div id="chat">
+  <div class="wrap" id="list">
+    <div class="hint" id="hint">
+      这是一个能真正调用 CRM 接口的智能体。<br />
+      切换上方「身份」，可以看到同一个问题在不同权限下的差别。
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="inputbar">
+    <textarea id="text" rows="1" placeholder="例如：我负责的客户有几个？ / 查一下韩楚风的订单"></textarea>
+    <button class="send" id="send">发送</button>
+  </div>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const list = $("list"), chat = $("chat");
+let busy = false, currentUser = "admin";
+
+const EXAMPLES = [
+  "我是谁？我有哪些角色？",
+  "我负责的客户有几个？列出前 5 个",
+  "查一下韩楚风的订单",
+  "客户一共多少条？按重点客户筛一下",
+  "本月每日销售额怎么样？",
+  "帮我给客户 1 记一条跟踪：电话沟通，客户有复购意向",
+];
+
+/* ---------- 初始化 ---------- */
+async function boot() {
+  const info = await (await fetch("/api/info")).json();
+  const sel = $("user");
+  sel.innerHTML = "";
+  const users = info.users || [];
+  if (!users.length) {
+    // 默认关闭"账号名登录"：这个页面只在开启 AGENT_ALLOW_USER_LOGIN=true 后可用
+    const o = document.createElement("option");
+    o.value = ""; o.textContent = "未启用账号登录（见 .env.example）";
+    sel.appendChild(o);
+    sel.disabled = true;
+  }
+  users.forEach(u => {
+    const o = document.createElement("option");
+    o.value = u.username; o.textContent = u.label;
+    sel.appendChild(o);
+  });
+  sel.value = currentUser;
+  sel.onchange = () => { currentUser = sel.value; clearChat(); };
+  $("sub").textContent = `模型 ${info.llm.model} · 目标系统 ${info.target}` +
+    (info.llm.ready ? "" : " · ⚠ 未配置 Key");
+  const chips = $("chips");
+  chips.innerHTML = "";
+  EXAMPLES.forEach(t => {
+    const d = document.createElement("div");
+    d.className = "chip"; d.textContent = t;
+    d.onclick = () => { $("text").value = t; send(); };
+    chips.appendChild(d);
+  });
+}
+
+function clearChat() {
+  list.innerHTML = `<div class="hint" id="hint">已切换身份，对话已清空。<br/>同一个问题，换个人问，答案会不一样。</div>`;
+}
+
+/* ---------- 渲染 ---------- */
+function addUser(text) {
+  const hint = $("hint"); if (hint) hint.remove();
+  const d = document.createElement("div");
+  d.className = "msg user";
+  d.innerHTML = `<div class="bubble"></div>`;
+  d.querySelector(".bubble").textContent = text;
+  list.appendChild(d); scroll();
+}
+
+function addBot(text) {
+  const d = document.createElement("div");
+  d.className = "msg bot";
+  d.innerHTML = `<div class="bubble"></div>`;
+  d.querySelector(".bubble").textContent = text;
+  list.appendChild(d); scroll();
+}
+
+function addTool(name, args) {
+  const d = document.createElement("div");
+  d.className = "tool";
+  d.innerHTML = `
+    <div class="head">
+      <span class="tag">工具调用</span>
+      <span class="name"></span>
+      <span class="arrow">展开 ▾</span>
+    </div>
+    <pre class="hidden"></pre>`;
+  d.querySelector(".name").textContent = name;
+  const pre = d.querySelector("pre");
+  pre.textContent = "参数：" + JSON.stringify(args ?? {}, null, 2);
+  d.querySelector(".head").onclick = () => {
+    pre.classList.toggle("hidden");
+    d.querySelector(".arrow").textContent = pre.classList.contains("hidden") ? "展开 ▾" : "收起 ▴";
+  };
+  list.appendChild(d); scroll();
+  return d;
+}
+
+function fillTool(el, result) {
+  const pre = el.querySelector("pre");
+  pre.textContent += "\n\n返回：" + JSON.stringify(result, null, 2);
+}
+
+function addConfirm(name, args) {
+  const d = document.createElement("div");
+  d.className = "confirm";
+  d.innerHTML = `
+    <div class="q">即将执行写操作 <b></b>，是否确认？</div>
+    <pre style="margin:0 0 10px;padding:8px;background:#fafafa;border-radius:6px;font-size:12px;color:#475669;white-space:pre-wrap;"></pre>
+    <div class="acts">
+      <button class="btn-yes">确认执行</button>
+      <button class="btn-no">取消</button>
+    </div>`;
+  d.querySelector("b").textContent = name;
+  d.querySelector("pre").textContent = JSON.stringify(args, null, 2);
+  d.querySelector(".btn-yes").onclick = () => doConfirm(d, true);
+  d.querySelector(".btn-no").onclick = () => doConfirm(d, false);
+  list.appendChild(d); scroll();
+}
+
+function addError(text) {
+  const d = document.createElement("div");
+  d.className = "msg bot";
+  d.innerHTML = `<div class="bubble" style="border-color:#fbc4c4;background:#fef0f0;color:#c45656"></div>`;
+  d.querySelector(".bubble").textContent = text;
+  list.appendChild(d); scroll();
+}
+
+function scroll() { chat.scrollTop = chat.scrollHeight; }
+
+/* ---------- 事件流 ---------- */
+function render(events) {
+  (events || []).forEach(ev => {
+    if (ev.type === "tool_call") {
+      window._lastTool = addTool(ev.name, ev.args);
+    } else if (ev.type === "tool_result") {
+      if (window._lastTool) fillTool(window._lastTool, ev.result);
+    } else if (ev.type === "confirm") {
+      addConfirm(ev.name, ev.args);
+    } else if (ev.type === "answer") {
+      addBot(ev.content);
+    }
+  });
+}
+
+async function post(url, body) {
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await r.json();
+  if (data.error) { addError(data.error); return null; }
+  return data;
+}
+
+async function send() {
+  if (busy) return;
+  const text = $("text").value.trim();
+  if (!text) return;
+  $("text").value = ""; $("text").style.height = "auto";
+  addUser(text);
+  busy = true; $("send").disabled = true;
+  const thinking = addTool("thinking", {});
+  thinking.querySelector(".name").textContent = "思考中";
+  thinking.querySelector(".tag").textContent = "等待模型";
+  thinking.classList.add("pending");
+
+  const data = await post("/api/chat", { user: currentUser, text });
+  thinking.remove();
+  busy = false; $("send").disabled = false;
+  if (data) render(data.events);
+}
+
+async function doConfirm(el, yes) {
+  el.querySelector(".acts").innerHTML = `<span class="sub">已${yes ? "确认" : "取消"}，处理中…</span>`;
+  const data = await post("/api/confirm", { user: currentUser, yes });
+  if (data) render(data.events);
+}
+
+/* ---------- 交互 ---------- */
+$("send").onclick = send;
+$("text").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+});
+$("text").addEventListener("input", (e) => {
+  e.target.style.height = "auto";
+  e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+});
+$("reset").onclick = async () => {
+  await post("/api/reset", { user: currentUser });
+  clearChat();
+};
+
+boot();
+</script>
+</body>
+</html>
