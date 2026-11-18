@@ -140,15 +140,29 @@ def _slim_tracking(t):
     }
 
 
-def _forbidden_hint(status, payload, fallback_tool):
-    """把后端的 403 翻译成模型能照着办的话，而不是一句干巴巴的报错。"""
+def _forbidden_hint(status, payload, fallback_tool=None):
+    """把后端的 403 翻译成模型能照着办的话，而不是一句干巴巴的报错。
+
+    【为什么这件事必须由工具层做】
+        工具返回 {"ok": false, "原因": "HTTP 403"} 时，模型只能猜这是"接口坏了"
+        还是"我没权限"，很容易答成"系统出错了"甚至绕过话题。把语义写清楚，
+        并且给出下一步该干什么，模型才有东西可照着说。
+
+    【fallback_tool 传 None 的场景】
+        统计、写操作这类没有"查自己那份"替代方案的接口。这时候硬塞一句
+        "可以改用 xxx"反而是误导，所以只要求它如实说权限不足。
+    """
     message = (payload or {}).get("message") or (payload or {}).get("detail") or "请求被拒绝"
     if status == 403:
-        return {
+        result = {
             "ok": False,
             "原因": f"当前账号没有该数据权限（后端返回：{message}）",
-            "建议": f"如实告知用户权限不足，不要猜测数据；可以改用 {fallback_tool} 查他自己的数据",
         }
+        if fallback_tool:
+            result["建议"] = f"如实告知用户权限不足，不要猜测数据；可以改用 {fallback_tool} 查他自己的数据"
+        else:
+            result["建议"] = "如实告知用户权限不足，不要猜测数据，也不要把「没有权限」说成「没有查到」"
+        return result
     return {"ok": False, "原因": f"接口调用失败（HTTP {status}）：{message}"}
 
 
@@ -209,7 +223,7 @@ def my_customers(limit: int = 20) -> dict:
     """查"我的客户"——后端按当前登录人做了行级隔离，只会返回自己跟的客户。"""
     status, meta, rows = _c().list_all("/api/customer/of_me/")
     if status != 200:
-        return _forbidden_hint(status, meta, "whoami")
+        return _forbidden_hint(status, meta)
     slim = [_slim_customer(c) for c in rows[:max(1, min(limit, 50))]]
     return {
         "ok": True,
@@ -225,7 +239,7 @@ def get_customer(customer_id: int) -> dict:
     if status != 200:
         if status == 404:
             return {"ok": False, "原因": f"客户ID {customer_id} 不存在"}
-        return _forbidden_hint(status, payload, "my_customers")
+        return _forbidden_hint(status, payload)
     detail = _slim_customer(payload)
     detail["备注"] = payload.get("remark")
     parent = payload.get("parent")
@@ -238,7 +252,7 @@ def list_trackings(customer_id: int = 0, keyword: str = "", limit: int = 20) -> 
     params = {"customer_id": customer_id} if customer_id else None
     status, meta, rows = _c().list_all("/api/customer_tracking/", params=params)
     if status != 200:
-        return _forbidden_hint(status, meta, "my_customers")
+        return _forbidden_hint(status, meta)
     if keyword:
         rows = [t for t in rows if keyword in ((t.get("customer") or {}).get("name") or "")]
     slim = [_slim_tracking(t) for t in rows[:max(1, min(limit, 50))]]
@@ -252,7 +266,7 @@ def list_orders(keyword: str = "", customer_id: int = 0, pay_status: str = "", l
     """查销售订单。keyword 匹配客户姓名/订单号/收货人；pay_status 取 已支付/未支付。"""
     status, meta, rows = _c().list_all("/api/sale_order/")
     if status != 200:
-        return _forbidden_hint(status, meta, "my_customers")
+        return _forbidden_hint(status, meta)
 
     def match(o):
         if customer_id and (o.get("customer") or {}).get("id") != customer_id:
@@ -294,7 +308,7 @@ def get_order(order_id: int) -> dict:
     if status != 200:
         if status == 404:
             return {"ok": False, "原因": f"订单ID {order_id} 不存在"}
-        return _forbidden_hint(status, payload, "my_customers")
+        return _forbidden_hint(status, payload)
     order = _slim_order(payload)
     st, items = _c().get_one("/api/sale_order_item/", params={"order_id": order_id})
     if st == 200:
@@ -329,7 +343,8 @@ def sales_stats(kind: str) -> dict:
         return {"ok": False, "原因": f"不支持的统计类型：{kind}", "可选": list(STAT_KINDS)}
     status, payload = _c().get_one(f"/api/stat/{path}/")
     if status != 200:
-        return {"ok": False, "原因": f"统计接口返回 HTTP {status}"}
+        # 统计没有"只看自己那份"的替代工具，所以 fallback 传 None
+        return _forbidden_hint(status, payload)
     if isinstance(payload, list):
         payload = payload[:12]
     return {"ok": True, "统计类型": kind, "数据": payload}
@@ -343,6 +358,9 @@ def add_tracking(customer_id: int, tracking_way: str, description: str) -> dict:
     )
     if status in (200, 201):
         return {"ok": True, "已写入": _slim_tracking(payload), "说明": "跟踪记录已保存到数据库"}
+    if status == 403:
+        # 写操作被拒要格外说清楚：这不是"没查到"，是"不许写"
+        return _forbidden_hint(status, payload)
     message = payload.get("message") or payload.get("detail") or payload
     if status == 400 and isinstance(payload, dict):
         message = payload
